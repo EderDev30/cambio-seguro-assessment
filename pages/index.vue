@@ -1,33 +1,25 @@
 <script setup lang="ts">
-const amount = ref(100)
-const fromCurrency = ref('USD')
-const toCurrency = ref('PEN')
+const amount = ref(100);
+const fromCurrency = ref("USD");
+const toCurrency = ref("PEN");
 
-const result = ref<number | null>(null)
-const loading = ref(false)
-const error = ref<string | null>(null)
+const { result, loading, error, convert } = useCurrencyConverter();
 
 const currencies = [
-  { code: 'USD', name: 'Dólar estadounidense' },
-  { code: 'PEN', name: 'Sol peruano' },
-  { code: 'EUR', name: 'Euro' }
-]
+  { code: "USD", name: "Dólar estadounidense" },
+  { code: "PEN", name: "Sol peruano" },
+  { code: "EUR", name: "Euro" },
+];
 
 async function convertCurrency() {
-  // TODO:
-  // 1. Validar el monto
-  // 2. Obtener el tipo de cambio
-  // 3. Calcular el resultado
-  // 4. Manejar loading y errores
+  await convert(amount.value, fromCurrency.value, toCurrency.value);
 }
 </script>
 
 <template>
   <section class="mx-auto max-w-xl">
     <div class="mb-8">
-      <h2 class="text-3xl font-bold text-gray-900">
-        Conversor de monedas
-      </h2>
+      <h2 class="text-3xl font-bold text-gray-900">Conversor de monedas</h2>
 
       <p class="mt-2 text-gray-600">
         Consulta el tipo de cambio y realiza una conversión.
@@ -36,7 +28,6 @@ async function convertCurrency() {
 
     <div class="rounded-xl bg-white p-6 shadow-sm">
       <div class="space-y-5">
-
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">
             Monto
@@ -95,33 +86,21 @@ async function convertCurrency() {
           Convertir
         </button>
 
-        <div
-          v-if="loading"
-          class="rounded-lg bg-gray-100 p-4 text-center"
-        >
+        <div v-if="loading" class="rounded-lg bg-gray-100 p-4 text-center">
           Consultando tipo de cambio...
         </div>
 
-        <div
-          v-if="error"
-          class="rounded-lg bg-red-50 p-4 text-red-700"
-        >
+        <div v-if="error" class="rounded-lg bg-red-50 p-4 text-red-700">
           {{ error }}
         </div>
 
-        <div
-          v-if="result !== null"
-          class="rounded-lg bg-green-50 p-4"
-        >
-          <p class="text-sm text-gray-600">
-            Resultado
-          </p>
+        <div v-if="result !== null" class="rounded-lg bg-green-50 p-4">
+          <p class="text-sm text-gray-600">Resultado</p>
 
           <p class="text-2xl font-bold text-gray-900">
             {{ result.toFixed(2) }} {{ toCurrency }}
           </p>
         </div>
-
       </div>
     </div>
   </section>
