@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+interface CurrencyOption {
+  code: string;
+  name: string;
+}
+
 const props = withDefaults(
   defineProps<{
     value: number | string;
+    currency: string;
+    currencies: CurrencyOption[];
     label: string;
-    currencyLabel: string;
     currencySymbol: string;
     editable?: boolean;
     loading?: boolean;
@@ -17,6 +23,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: "update:value", value: number): void;
+  (e: "update:currency", currency: string): void;
 }>();
 
 const inputWidth = computed(() => {
@@ -27,21 +34,25 @@ const inputWidth = computed(() => {
 
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement;
-
   emit("update:value", Number(target.value));
 };
 </script>
 
 <template>
   <div
-    class="flex min-h-[45px] min-w-[282px] items-stretch justify-between rounded-md border border-brand-purple overflow-hidden"
+    class="flex min-h-[45px] min-w-[282px] items-stretch justify-between rounded-md border overflow-visible"
+    :class="[
+      editable
+        ? 'border-brand-purple/30 hover:border-brand-purple focus-within:border-2 focus-within:border-brand-purple'
+        : 'border-gray-200 bg-gray-50/50 cursor-not-allowed',
+    ]"
   >
-    <div
-      class="w-24 flex items-center bg-brand-bg px-5 font-bold text-sm text-brand-purple shrink-0 select-none"
-    >
-      {{ currencyLabel }}
-    </div>
-
+    <CurrencyDropdown
+      :model-value="currency"
+      @update:model-value="$emit('update:currency', $event)"
+      :currencies="currencies"
+      :disabled="loading"
+    />
     <div
       class="flex flex-col justify-center items-end pr-4 pt-2 pb-[3px] flex-1 min-w-0 h-full"
     >
@@ -70,7 +81,7 @@ const handleInput = (event: Event) => {
           v-else
           class="text-right text-base font-medium text-content-primary leading-none"
         >
-          {{ value }}
+          {{ Number(value) === 0 ? "0" : Number(value).toFixed(2) }}
         </span>
       </div>
     </div>

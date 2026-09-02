@@ -1,35 +1,4 @@
-<script setup lang="ts">
-const amount = ref(100);
-const fromCurrency = ref("USD");
-const toCurrency = ref("PEN");
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-const { result, loading, error, convert } = useCurrencyConverter();
-
-async function convertCurrency() {
-  await convert(amount.value, fromCurrency.value, toCurrency.value);
-}
-
-watch(
-  [amount, fromCurrency, toCurrency],
-  ([newAmount, newFrom, newTo], [oldAmount, oldFrom, oldTo]) => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-
-    if (!newAmount || newAmount <= 0) return;
-
-    const currencyChanged = newFrom !== oldFrom || newTo !== oldTo;
-
-    if (currencyChanged) {
-      convertCurrency();
-    } else {
-      debounceTimer = setTimeout(() => {
-        convertCurrency();
-      }, 500);
-    }
-  },
-  { immediate: true },
-);
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <section
@@ -54,15 +23,7 @@ watch(
         <div
           class="w-full max-w-[386px] rounded-xl bg-white p-6 text-gray-900 shadow-xl"
         >
-          <CurrencyForm
-            v-model:amount="amount"
-            v-model:fromCurrency="fromCurrency"
-            v-model:toCurrency="toCurrency"
-            :result="result"
-            :loading="loading"
-            :error="error"
-            @convert="convertCurrency"
-          />
+          <CurrencyForm />
         </div>
       </div>
     </div>

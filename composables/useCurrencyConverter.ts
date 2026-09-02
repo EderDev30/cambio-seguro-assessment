@@ -4,12 +4,14 @@ export interface ExchangeRateResponse {
 
 export function useCurrencyConverter() {
   const result = ref<number | null>(null);
+  const rate = ref<number | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
   async function convert(amount: number, from: string, to: string) {
     error.value = null;
     result.value = null;
+    rate.value = null;
 
     if (amount === null || amount === undefined || isNaN(amount)) {
       error.value = "Debe ingresar un monto válido";
@@ -42,7 +44,7 @@ export function useCurrencyConverter() {
       if (!response || typeof response.rate !== "number") {
         throw new Error("Hubo un error al obtener la tasa de cambio");
       }
-
+      rate.value = response.rate;
       result.value = amount * response.rate;
     } catch (err: any) {
       error.value =
@@ -59,5 +61,6 @@ export function useCurrencyConverter() {
     loading,
     error,
     convert,
+    rate,
   };
 }

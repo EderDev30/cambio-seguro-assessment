@@ -1,91 +1,101 @@
 <script setup lang="ts">
-const props = defineProps<{
-  amount: number;
-  fromCurrency: string;
-  toCurrency: string;
-  result: number | null;
-  loading?: boolean;
-  error?: string | null;
-}>();
+import { ref, watch, computed } from "vue";
 
-const emit = defineEmits<{
-  (e: "update:amount", value: number): void;
-  (e: "update:fromCurrency", value: string): void;
-  (e: "update:toCurrency", value: string): void;
-  (e: "convert"): void;
-}>();
+const currencies = [
+  { code: "USD", name: "Dólares", symbol: "$" },
+  { code: "PEN", name: "Soles", symbol: "S/" },
+  { code: "EUR", name: "Euros", symbol: "€" },
+];
 
-const activeTab = ref<"buy" | "sell">(
-  props.fromCurrency === "USD" ? "buy" : "sell",
-);
+const amount = ref(100);
+const fromCurrency = ref("USD");
+const toCurrency = ref("PEN");
+const exchangeRate = ref<number | null>(null);
 
-function selectTab(type: "buy" | "sell") {
-  activeTab.value = type;
-  if (type === "buy") {
-    emit("update:fromCurrency", "USD");
-    emit("update:toCurrency", "PEN");
-  } else {
-    emit("update:fromCurrency", "PEN");
-    emit("update:toCurrency", "USD");
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+const { result, loading, error, convert, rate } = useCurrencyConverter();
+
+async function convertCurrency() {
+  await convert(amount.value, fromCurrency.value, toCurrency.value);
+
+  if (rate?.value) {
+    exchangeRate.value = rate.value;
   }
 }
 
-function toggleTab() {
-  selectTab(activeTab.value === "buy" ? "sell" : "buy");
+function handleFromChange(newCurrency: string) {
+  if (newCurrency === toCurrency.value) {
+    toCurrency.value = fromCurrency.value;
+  }
+  fromCurrency.value = newCurrency;
+}
+
+function handleToChange(newCurrency: string) {
+  if (newCurrency === fromCurrency.value) {
+    fromCurrency.value = toCurrency.value;
+  }
+  toCurrency.value = newCurrency;
+}
+
+watch(
+  [amount, fromCurrency, toCurrency],
+  ([newAmount], [, oldFrom, oldTo]) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    if (!newAmount || newAmount <= 0) {
+      if (result) result.value = 0;
+      return;
+    }
+
+    const currencyChanged =
+      oldFrom !== undefined &&
+      (fromCurrency.value !== oldFrom || toCurrency.value !== oldTo);
+
+    if (currencyChanged) {
+      convertCurrency();
+    } else {
+      debounceTimer = setTimeout(() => {
+        convertCurrency();
+      }, 500);
+    }
+  },
+  { immediate: true },
+);
+
+const fromSymbol = computed(
+  () => currencies.find((c) => c.code === fromCurrency.value)?.symbol || "$",
+);
+const toSymbol = computed(
+  () => currencies.find((c) => c.code === toCurrency.value)?.symbol || "S/",
+);
+
+function handleSwap() {
+  const temp = fromCurrency.value;
+  fromCurrency.value = toCurrency.value;
+  toCurrency.value = temp;
 }
 </script>
 
 <template>
   <div class="space-y-4">
-    <div
-      class="grid grid-cols-2 border-b border-gray-100 text-center text-sm font-medium"
-    >
-      <button
-        type="button"
-        @click="selectTab('buy')"
-        :class="[
-          'pb-3 transition-colors',
-          activeTab === 'buy'
-            ? 'text-brand-purple border-b-2 border-brand-purple font-bold'
-            : 'text-gray-400 hover:text-gray-600',
-        ]"
+    <div class="border-b border-gray-100 text-center pb-3">
+      <span class="text-xs text-gray-400 block font-medium"
+        >Tipo de cambio actual</span
       >
-        Dólar compra <br />
-        <span
-          class="text-xs font-semibold"
-          :class="activeTab === 'buy' ? 'text-brand-purple' : 'text-gray-400'"
-        >
-          3.9240
-        </span>
-      </button>
-
-      <button
-        type="button"
-        @click="selectTab('sell')"
-        :class="[
-          'pb-3 transition-colors',
-          activeTab === 'sell'
-            ? 'text-brand-purple border-b-2 border-brand-purple font-bold'
-            : 'text-gray-400 hover:text-gray-600',
-        ]"
-      >
-        Dólar venta <br />
-        <span
-          class="text-xs font-semibold"
-          :class="activeTab === 'sell' ? 'text-brand-purple' : 'text-gray-400'"
-        >
-          3.9450
-        </span>
-      </button>
+      <span class="text-base font-bold text-brand-purple">
+        1 {{ fromCurrency }} =
+        {{ exchangeRate ? exchangeRate.toFixed(4) : "..." }} {{ toCurrency }}
+      </span>
     </div>
 
     <div class="relative space-y-3 pt-2">
       <CurrencyInput
-        :value="amount"
-        @update:value="$emit('update:amount', $event)"
+        v-model:value="amount"
+        :currency="fromCurrency"
+        @update:currency="handleFromChange"
+        :currencies="currencies"
         label="Envías"
-        :currency-label="activeTab === 'buy' ? 'Dólares' : 'Soles'"
-        :currency-symbol="activeTab === 'buy' ? '$' : 'S/'"
+        :currency-symbol="fromSymbol"
         :loading="loading"
       />
 
@@ -93,7 +103,7 @@ function toggleTab() {
         class="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 z-10"
       >
         <button
-          @click="toggleTab"
+          @click="handleSwap"
           type="button"
           class="flex h-[42px] w-[43px] items-center justify-center rounded-full bg-brand-purple text-white hover:bg-opacity-90 focus:outline-none"
           title="Invertir operación"
@@ -104,9 +114,11 @@ function toggleTab() {
 
       <CurrencyInput
         :value="result ?? 0"
+        :currency="toCurrency"
+        @update:currency="handleToChange"
+        :currencies="currencies"
         label="Recibes"
-        :currency-label="activeTab === 'buy' ? 'Soles' : 'Dólares'"
-        :currency-symbol="activeTab === 'buy' ? 'S/' : '$'"
+        :currency-symbol="toSymbol"
         :editable="false"
       />
     </div>
@@ -115,20 +127,10 @@ function toggleTab() {
       v-if="error"
       class="flex items-center space-x-2 rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-600"
     >
-      <svg
-        class="h-4 w-4 shrink-0 fill-current text-red-500"
-        viewBox="0 0 20 20"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-          clip-rule="evenodd"
-        />
-      </svg>
       <span>{{ error }}</span>
     </div>
 
-    <Button :loading="loading" @click="$emit('convert')">
+    <Button :loading="loading" @click="convertCurrency">
       Iniciar operación
     </Button>
   </div>
