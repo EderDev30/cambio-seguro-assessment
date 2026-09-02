@@ -1,14 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <header class="border-b bg-white">
-      <div class="mx-auto max-w-5xl px-6 py-4">
-        <h1 class="text-xl font-semibold text-gray-900">
-          Cambio Seguro
-        </h1>
-      </div>
-    </header>
-
-    <main class="mx-auto max-w-5xl px-6 py-10">
+  <div class="h-full w-full min-h-screen bg-gray-50">
+    <main class="h-full w-full font-sans">
       <NuxtPage />
     </main>
   </div>

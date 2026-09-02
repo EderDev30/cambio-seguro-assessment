@@ -1,13 +1,20 @@
 export default defineNuxtConfig({
-  css: ['~/assets/css/tailwind.css'],
+  css: ["~/assets/css/tailwind.css"],
+
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
 
   devtools: {
-    enabled: false
+    enabled: false,
   },
 
   typescript: {
-    strict: true
+    strict: true,
   },
 
-  compatibilityDate: '2026-01-01'
-})
+  compatibilityDate: "2026-01-01",
+});

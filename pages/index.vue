@@ -2,104 +2,67 @@
 const amount = ref(100);
 const fromCurrency = ref("USD");
 const toCurrency = ref("PEN");
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 const { result, loading, error, convert } = useCurrencyConverter();
-
-const currencies = [
-  { code: "USD", name: "Dólar estadounidense" },
-  { code: "PEN", name: "Sol peruano" },
-  { code: "EUR", name: "Euro" },
-];
 
 async function convertCurrency() {
   await convert(amount.value, fromCurrency.value, toCurrency.value);
 }
+
+watch(
+  [amount, fromCurrency, toCurrency],
+  ([newAmount, newFrom, newTo], [oldAmount, oldFrom, oldTo]) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+
+    if (!newAmount || newAmount <= 0) return;
+
+    const currencyChanged = newFrom !== oldFrom || newTo !== oldTo;
+
+    if (currencyChanged) {
+      convertCurrency();
+    } else {
+      debounceTimer = setTimeout(() => {
+        convertCurrency();
+      }, 500);
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
-  <section class="mx-auto max-w-xl">
-    <div class="mb-8">
-      <h2 class="text-3xl font-bold text-gray-900">Conversor de monedas</h2>
+  <section
+    class="h-full w-full bg-gradient-to-r from-brand-purple-dark to-brand-purple text-white px-6 py-10 md:py-20 md:place-content-center"
+  >
+    <div
+      class="mx-auto grid max-w-5xl grid-cols-1 items-center gap-8 md:grid-cols-2"
+    >
+      <div
+        class="flex flex-col items-center text-center md:items-start md:text-left"
+      >
+        <h1 class="text-3xl font-bold leading-tight md:text-5xl">
+          El mejor <br />
+          tipo de cambio
+        </h1>
+        <p class="mt-2 text-sm md:text-base">
+          para cambiar dólares y soles online en Perú
+        </p>
+      </div>
 
-      <p class="mt-2 text-gray-600">
-        Consulta el tipo de cambio y realiza una conversión.
-      </p>
-    </div>
-
-    <div class="rounded-xl bg-white p-6 shadow-sm">
-      <div class="space-y-5">
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">
-            Monto
-          </label>
-
-          <input
-            v-model.number="amount"
-            type="number"
-            min="0"
-            class="w-full rounded-lg border px-4 py-3"
-          />
-        </div>
-
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">
-            De
-          </label>
-
-          <select
-            v-model="fromCurrency"
-            class="w-full rounded-lg border px-4 py-3"
-          >
-            <option
-              v-for="currency in currencies"
-              :key="currency.code"
-              :value="currency.code"
-            >
-              {{ currency.code }} — {{ currency.name }}
-            </option>
-          </select>
-        </div>
-
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">
-            A
-          </label>
-
-          <select
-            v-model="toCurrency"
-            class="w-full rounded-lg border px-4 py-3"
-          >
-            <option
-              v-for="currency in currencies"
-              :key="currency.code"
-              :value="currency.code"
-            >
-              {{ currency.code }} — {{ currency.name }}
-            </option>
-          </select>
-        </div>
-
-        <button
-          class="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700"
-          @click="convertCurrency"
+      <div class="flex justify-center md:justify-end">
+        <div
+          class="w-full max-w-[386px] rounded-xl bg-white p-6 text-gray-900 shadow-xl"
         >
-          Convertir
-        </button>
-
-        <div v-if="loading" class="rounded-lg bg-gray-100 p-4 text-center">
-          Consultando tipo de cambio...
-        </div>
-
-        <div v-if="error" class="rounded-lg bg-red-50 p-4 text-red-700">
-          {{ error }}
-        </div>
-
-        <div v-if="result !== null" class="rounded-lg bg-green-50 p-4">
-          <p class="text-sm text-gray-600">Resultado</p>
-
-          <p class="text-2xl font-bold text-gray-900">
-            {{ result.toFixed(2) }} {{ toCurrency }}
-          </p>
+          <CurrencyForm
+            v-model:amount="amount"
+            v-model:fromCurrency="fromCurrency"
+            v-model:toCurrency="toCurrency"
+            :result="result"
+            :loading="loading"
+            :error="error"
+            @convert="convertCurrency"
+          />
         </div>
       </div>
     </div>

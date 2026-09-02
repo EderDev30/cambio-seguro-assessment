@@ -16,7 +16,7 @@ export function useCurrencyConverter() {
       return;
     }
 
-    if (amount < 0) {
+    if (amount <= 0) {
       error.value = "El monto debe ser mayor a 0";
       return;
     }
