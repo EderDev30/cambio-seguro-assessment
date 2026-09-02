@@ -78,15 +78,12 @@ function handleSwap() {
 
 <template>
   <div class="space-y-4">
-    <div class="border-b border-gray-100 text-center pb-3">
-      <span class="text-xs text-gray-400 block font-medium"
-        >Tipo de cambio actual</span
-      >
-      <span class="text-base font-bold text-brand-purple">
-        1 {{ fromCurrency }} =
-        {{ exchangeRate ? exchangeRate.toFixed(4) : "..." }} {{ toCurrency }}
-      </span>
-    </div>
+    <ExchangeRateDisplay
+      :from-currency="fromCurrency"
+      :to-currency="toCurrency"
+      :exchange-rate="exchangeRate"
+      :loading="loading"
+    />
 
     <div class="relative space-y-3 pt-2">
       <CurrencyInput
@@ -96,7 +93,6 @@ function handleSwap() {
         :currencies="currencies"
         label="Envías"
         :currency-symbol="fromSymbol"
-        :loading="loading"
       />
 
       <div
