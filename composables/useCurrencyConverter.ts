@@ -10,7 +10,6 @@ export function useCurrencyConverter() {
 
   async function convert(amount: number, from: string, to: string) {
     error.value = null;
-    result.value = null;
     rate.value = null;
 
     if (amount === null || amount === undefined || isNaN(amount)) {
@@ -47,10 +46,17 @@ export function useCurrencyConverter() {
       rate.value = response.rate;
       result.value = amount * response.rate;
     } catch (err: any) {
-      error.value =
-        err?.data?.statusMessage ||
-        err?.message ||
-        "No pudimos conectar con el servicio de conversión de moneda";
+      if (
+        !window.navigator.onLine ||
+        err?.message?.includes("Failed to fetch")
+      ) {
+        error.value =
+          "No hay conexión a internet. Revisa tu red e inténtalo de nuevo.";
+      } else {
+        error.value =
+          err?.data?.message ||
+          "No se pudo obtener el tipo de cambio. Inténtalo más tarde.";
+      }
     } finally {
       loading.value = false;
     }

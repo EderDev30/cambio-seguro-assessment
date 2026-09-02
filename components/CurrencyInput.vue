@@ -32,9 +32,26 @@ const inputWidth = computed(() => {
   return `${length}ch`;
 });
 
-const handleInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  emit("update:value", Number(target.value));
+const inputValue = computed({
+  get: () => props.value,
+  set: (val: string | number) => {
+    if (val === "" || val === null) {
+      emit("update:value", 0);
+      return;
+    }
+
+    let parsed = typeof val === "string" ? parseFloat(val) : val;
+    if (isNaN(parsed) || parsed < 0) {
+      parsed = 0;
+    }
+    emit("update:value", parsed);
+  },
+});
+
+const blockNegative = (event: KeyboardEvent) => {
+  if (event.key === "-" || event.key === "e") {
+    event.preventDefault();
+  }
 };
 </script>
 
@@ -68,17 +85,19 @@ const handleInput = (event: Event) => {
         </span>
 
         <input
-          v-if="editable"
-          :value="value"
-          @input="handleInput"
+          v-show="editable"
+          v-model="inputValue"
           :disabled="loading"
           type="number"
+          step="any"
+          min="0"
           :style="{ width: inputWidth }"
+          @keydown="blockNegative"
           class="text-right text-base font-medium text-content-primary bg-transparent outline-none p-0 m-0 min-w-0 leading-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
 
         <span
-          v-else
+          v-show="!editable"
           class="text-right text-base font-medium text-content-primary leading-none"
         >
           {{ Number(value) === 0 ? "0" : Number(value).toFixed(2) }}
